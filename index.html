@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070d1a">
+  <meta name="description" content="دليل قرية طنبشا - أرقام الصنايعية والمحلات والخدمات والمواصلات والأرقام المهمة في مركز بركة السبع، المنوفية.">
+  <title>دليل المهن والخدمات لقرية طنبشا</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body data-theme="dark">
+  <div class="splash-screen" id="splash-screen" role="status" aria-label="Designer | MoAz Mohamed">
+    <div class="splash-stars" aria-hidden="true"></div>
+    <p class="splash-title" dir="ltr">Designer | MoAz Mohamed</p>
+    <div class="splash-credit" dir="ltr"><span>Made with</span><strong>MoAz</strong></div>
+  </div>
+  <div class="site-starfield" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="تغيير إلى الوضع الفاتح" title="تغيير الثيم">
+      <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+      <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.9 13A8.5 8.5 0 0 1 11 3.1 8.8 8.8 0 1 0 20.9 13Z"/></svg>
+    </button>
+    <button class="admin-access" type="button" id="admin-access">دخول الإدارة <span aria-hidden="true">🔒</span></button>
+    <div class="identity">
+      <div class="identity-icon" aria-hidden="true">🔧</div>
+      <h1>دليل المهن والخدمات لقرية طنبشا</h1>
+      <p class="identity-credit" dir="ltr">Designer | MoAz Mohamed</p>
+      <p class="identity-hint">اختار المهنة أو ابحث بالاسم والرقم</p>
+    </div>
+  </header>
+
+  <main class="directory-layout" id="home">
+    <label class="search-box" for="search-input">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>
+      <input id="search-input" type="search" placeholder="ابحث عن اسم أو رقم أو مهنة" autocomplete="off">
+      <span class="search-hint" aria-hidden="true">بحث</span>
+    </label>
+
+    <section class="profession-view" id="profession-view" aria-labelledby="directory-title">
+      <div class="section-heading">
+        <div class="section-heading-copy">
+          <span class="section-kicker">الخدمات المتاحة</span>
+          <h2 id="directory-title">اختار المهنة</h2>
+        </div>
+        <span class="profession-total"><strong id="profession-count">19</strong> مهنة</span>
+      </div>
+      <div class="profession-grid" id="profession-grid" aria-label="المهن والخدمات"></div>
+    </section>
+
+    <section class="results-view" id="results-view" aria-labelledby="selected-profession-title" hidden>
+      <div class="results-heading">
+        <h2 id="selected-profession-title"></h2>
+        <button class="back-to-professions" id="back-to-professions" type="button">‹ رجوع للمهن</button>
+      </div>
+      <p class="results-summary" id="results-summary" aria-live="polite"></p>
+      <div class="results-cards" id="provider-results" aria-live="polite"></div>
+      <p class="results-empty" id="results-empty" hidden>مفيش أرقام مضافة هنا حالياً.</p>
+    </section>
+
+    <section class="share-strip" aria-label="مشاركة دليل طنبشا">
+      <div><strong>دليل طنبشا في مكان واحد</strong><span>شارك الرابط مع أهل البلد</span></div>
+      <div class="share-actions">
+        <button id="share-button" class="share-button" type="button">مشاركة</button>
+        <button id="copy-button" class="copy-button" type="button"><span>نسخ اللينك</span></button>
+      </div>
+    </section>
+
+    <footer class="site-footer"><span>© 2026 دليل طنبشا</span><span>طنبشا، مركز بركة السبع، المنوفية</span></footer>
+  </main>
+
+  <button class="floating-add" type="button" aria-label="إضافة مهنة أو رقم جديد" title="إضافة رقم جديد"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
