@@ -370,7 +370,15 @@ function createAddModal() {
     modal.showModal();
     form.querySelector('[name="name"]').focus();
   };
-  document.querySelectorAll('.floating-add, .admin-access').forEach((button) => button.addEventListener('click', openModal));
+  document.querySelector('#admin-access').addEventListener('click', () => {
+    const password = window.prompt('أدخل الرقم السري');
+    if (password === null) return;
+    if (password === '1611') {
+      openModal();
+      return;
+    }
+    window.alert('الرقم السري خطأ');
+  });
   modal.querySelector('.add-modal__close').addEventListener('click', () => modal.close());
   modal.querySelector('.add-form__cancel').addEventListener('click', () => modal.close());
   modal.addEventListener('click', (event) => {
