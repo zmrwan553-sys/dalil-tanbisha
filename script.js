@@ -373,7 +373,7 @@ function createAddModal() {
   document.querySelector('#admin-access').addEventListener('click', () => {
     const password = window.prompt('أدخل الرقم السري');
     if (password === null) return;
-    if (password === '1611') {
+    if (password === '2008') {
       openModal();
       return;
     }
