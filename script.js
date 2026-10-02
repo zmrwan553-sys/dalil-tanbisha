@@ -7,7 +7,7 @@ const categoryDefinitions = [
   { id: 'carpenters', label: 'نجارين', icon: '🪚' },
   { id: 'doors-windows', label: 'ابواب وشبابيك والوميتال', icon: '🚪' },
   { id: 'painters', label: 'نقاشين', icon: '🖌️' },
-  { id: 'appliances', label: 'تصليح تلاجات وغسالات', icon: '🧺' },
+  { id: 'appliances', label: 'تصليح تلاجات وغسالات وتكيفات', icon: '🧺' },
   { id: 'tuktuk', label: 'تكاتك', icon: '🛺' },
   { id: 'pharmacies', label: 'صيدليات', icon: '✚' },
   { id: 'doctors', label: 'اطباء', icon: '🩺' },
