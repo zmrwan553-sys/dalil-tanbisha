@@ -96,7 +96,9 @@ function normalizeNumbers(data) {
       ? data.numbers
       : Array.isArray(data?.data)
         ? data.data
-        : [];
+        : Array.isArray(data?.value)
+          ? data.value
+          : [];
 
   return records.map((record) => {
     if (!record || typeof record !== 'object') return null;
@@ -200,17 +202,18 @@ function createContactCard(listing) {
   details.className = 'provider-details';
   const name = document.createElement('h4');
   name.textContent = listing.name;
+  details.append(name);
+  if (listing.description) {
+    const description = document.createElement('div');
+    description.style.cssText = 'font-size:12px; color:#9CA3AF; margin-top:4px;';
+    description.textContent = listing.description;
+    details.append(description);
+  }
   const phone = document.createElement('p');
   phone.className = 'provider-phone';
   phone.dir = 'ltr';
   phone.textContent = listing.phone;
-  details.append(name, phone);
-  if (listing.description) {
-    const description = document.createElement('p');
-    description.className = 'provider-description';
-    description.textContent = listing.description;
-    details.append(description);
-  }
+  details.append(phone);
 
   const actions = document.createElement('div');
   actions.className = 'provider-actions';
