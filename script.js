@@ -18,6 +18,8 @@ const categoryDefinitions = [
   { id: 'furniture', label: 'تجار موبيليا', icon: '🪑' },
   { id: 'laboratories', label: 'معامل', icon: '🧪' },
   { id: 'doctors-clinics', label: 'دكاترة', icon: '👨‍⚕️' },
+  { id: 'gypsum-decor', label: 'جبس بورد وديكورات', icon: '🎨' },
+  { id: 'sewage-trucks', label: 'عربيات صرف وكسح', icon: '🚛' },
 ];
 const categoryById = Object.fromEntries(categoryDefinitions.map((category) => [category.id, category]));
 const categoryAliases = new Map([
