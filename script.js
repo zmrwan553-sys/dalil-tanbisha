@@ -45,10 +45,6 @@ const professionGroups = categoryDefinitions.map((category) => ({
   icon: category.icon,
   categories: [category.id],
 }));
-const initialListings = [];
-const storageKey = 'tanbish_numbers';
-const legacyStorageKey = 'tanbish-guide-listings';
-const sheetUrlStorageKey = 'tanbish_sheet_url';
 const searchInput = document.querySelector('#search-input');
 const professionGrid = document.querySelector('#profession-grid');
 const professionView = document.querySelector('#profession-view');
@@ -58,12 +54,9 @@ const providerResults = document.querySelector('#provider-results');
 const resultsSummary = document.querySelector('#results-summary');
 const resultsEmpty = document.querySelector('#results-empty');
 const toast = document.querySelector('#toast');
-let listings = [...initialListings];
 let selectedProfession = null;
 let toastTimer;
-let numbersLoadPromise;
-let listingsReady = false;
-let pendingListings = [];
+let listings = [];
 
 function showToast(message) {
   toast.textContent = message;
@@ -75,18 +68,6 @@ function showToast(message) {
 function normalizeSearch(value) {
   const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
   return String(value).normalize('NFKC').replace(/[٠-٩]/g, (digit) => String(arabicDigits.indexOf(digit))).toLocaleLowerCase('ar').trim();
-}
-
-function getSheetUrl() {
-  const configuredUrl = SHEET_URL.trim();
-  if (configuredUrl) return configuredUrl;
-
-  try {
-    const savedUrl = localStorage.getItem(sheetUrlStorageKey);
-    return savedUrl ? savedUrl.trim() : '';
-  } catch {
-    return '';
-  }
 }
 
 function normalizeNumbers(data) {
@@ -113,6 +94,7 @@ function normalizeNumbers(data) {
       ? `0${phoneText}`
       : phoneText;
     return {
+      id: String(record.id || record.ID || ''),
       name,
       phone,
       category,
@@ -121,70 +103,36 @@ function normalizeNumbers(data) {
   }).filter((listing) => listing && listing.name && listing.phone && listing.category);
 }
 
-function getSavedListings() {
-  try {
-    return normalizeNumbers(JSON.parse(localStorage.getItem(storageKey) || '[]'));
-  } catch {
-    return [];
-  }
-}
+function requestPublicListings() {
+  return new Promise((resolve, reject) => {
+    const callbackName = `directoryCallback${Date.now()}${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement('script');
+    const timeoutId = window.setTimeout(() => finish(new Error('Directory request timed out')), 10000);
 
-function saveLocalNumbers(numbers) {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(numbers));
-    return true;
-  } catch {
-    return false;
-  }
+    function finish(error, data) {
+      window.clearTimeout(timeoutId);
+      delete window[callbackName];
+      script.remove();
+      if (error) reject(error);
+      else resolve(data);
+    }
+
+    window[callbackName] = (data) => finish(null, data);
+    script.onerror = () => finish(new Error('Directory request failed'));
+    script.src = `${DIRECTORY_API_URL}?action=list&callback=${encodeURIComponent(callbackName)}`;
+    document.head.append(script);
+  });
 }
 
 async function loadNumbers() {
-  const sheetUrl = getSheetUrl();
-  if (sheetUrl) {
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
-    try {
-      const response = await fetch(sheetUrl, { cache: 'no-store', signal: controller.signal });
-      if (!response.ok) throw new Error(`Sheet request failed: ${response.status}`);
-      const remoteNumbers = normalizeNumbers(await response.json());
-      if (remoteNumbers.length) {
-        saveLocalNumbers(remoteNumbers);
-        return remoteNumbers;
-      }
-    } catch (error) {
-      console.warn('تعذر تحميل أرقام Google Sheets، سيتم استخدام النسخة المحلية.', error);
-    } finally {
-      window.clearTimeout(timeoutId);
-    }
-  }
-
-  const savedNumbers = getSavedListings();
-  if (savedNumbers.length) return savedNumbers;
-
   try {
-    const legacyNumbers = normalizeNumbers(JSON.parse(localStorage.getItem(legacyStorageKey) || '[]'));
-    if (legacyNumbers.length) {
-      saveLocalNumbers(legacyNumbers);
-      return legacyNumbers;
-    }
+    const response = await requestPublicListings();
+    if (response?.error) throw new Error(response.error);
+    return normalizeNumbers(response);
   } catch {
-    return [...initialListings];
+    showToast('تعذر تحميل بيانات الدليل الآن');
+    return [];
   }
-
-  return [...initialListings];
-}
-
-function getMergedListings(loadedNumbers) {
-  const mergedNumbers = [...loadedNumbers];
-  pendingListings.forEach((pendingNumber) => {
-    const alreadyLoaded = mergedNumbers.some((number) => (
-      number.name === pendingNumber.name
-      && number.phone === pendingNumber.phone
-      && number.category === pendingNumber.category
-    ));
-    if (!alreadyLoaded) mergedNumbers.push(pendingNumber);
-  });
-  return mergedNumbers;
 }
 
 function getWhatsAppNumber(phone) {
@@ -271,38 +219,6 @@ function listingMatches(listing, category, query) {
   return text.includes(normalizedQuery) || Boolean(queryDigits && phoneDigits.includes(queryDigits));
 }
 
-async function saveNumber(newNumber) {
-  const normalizedNumber = normalizeNumbers([newNumber])[0];
-  if (!normalizedNumber) return false;
-
-  listings.push(normalizedNumber);
-  if (!listingsReady) pendingListings.push(normalizedNumber);
-  const localSaveSucceeded = saveLocalNumbers(listings);
-  searchInput.value = '';
-  selectedProfession = professionGroups.find((group) => group.categories.includes(normalizedNumber.category))?.id || null;
-  updateDirectory();
-
-  const sheetUrl = getSheetUrl();
-  if (sheetUrl) {
-    try {
-      await fetch(sheetUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify({
-          name: normalizedNumber.name,
-          phone: normalizedNumber.phone,
-          category: String(newNumber.category).trim(),
-          description: normalizedNumber.description,
-        }),
-      });
-    } catch (error) {
-      console.warn('تعذر إرسال الرقم إلى Google Sheets.', error);
-    }
-  }
-
-  return localSaveSucceeded;
-}
-
 function updateDirectory() {
   const query = searchInput.value.trim();
   const profession = professionGroups.find((group) => group.id === selectedProfession);
@@ -334,99 +250,6 @@ function updateDirectory() {
 
 function getShareUrl() {
   return window.location.href.split('#')[0];
-}
-
-function createAddModal() {
-  const modal = document.createElement('dialog');
-  modal.className = 'add-modal';
-  modal.id = 'add-listing-modal';
-  modal.setAttribute('aria-labelledby', 'add-modal-title');
-  const categoryOptions = categoryDefinitions
-    .map((category) => `<option value="${category.id}">${category.label}</option>`)
-    .join('');
-  modal.innerHTML = `
-    <div class="add-modal__header">
-      <div><span class="add-modal__eyebrow">دليل طنبشا</span><h2 id="add-modal-title">أضف خدمة جديدة</h2><p>خلّي أهل البلد يوصلوا لك بسهولة.</p></div>
-      <button class="add-modal__close" type="button" aria-label="إغلاق النموذج">×</button>
-    </div>
-    <form class="add-form">
-      <div class="add-form__fields">
-        <label class="add-form__field"><span>اسم الشخص / المحل <b>*</b></span><input name="name" type="text" maxlength="70" placeholder="مثال: أحمد السباك" autocomplete="name" required></label>
-        <label class="add-form__field"><span>رقم التليفون <b>*</b></span><input name="phone" type="tel" inputmode="tel" maxlength="20" placeholder="01xxxxxxxxx" autocomplete="tel" required></label>
-        <label class="add-form__field add-form__field--full"><span>التصنيف <b>*</b></span><select name="category" required><option value="" disabled selected>اختار التصنيف</option>${categoryOptions}</select></label>
-        <label class="add-form__field add-form__field--full"><span>وصف قصير <small>اختياري</small></span><textarea name="description" rows="3" maxlength="140" placeholder="اكتب نبذة بسيطة عن الخدمة..."></textarea></label>
-      </div>
-      <div class="add-form__actions"><button class="add-form__submit" type="submit">إضافة وحفظ</button><button class="add-form__cancel" type="button">إلغاء</button></div>
-    </form>
-    <div class="sheet-url-setting">
-      <label for="sheet-url-input">رابط SHEET_URL</label>
-      <div class="sheet-url-controls">
-        <input id="sheet-url-input" type="url" dir="ltr" placeholder="https://script.google.com/macros/s/.../exec">
-        <button class="sheet-url-save" id="save-sheet-url" type="button">حفظ رابط الشيت</button>
-      </div>
-    </div>`;
-  document.body.append(modal);
-
-  const form = modal.querySelector('.add-form');
-  const sheetUrlInput = modal.querySelector('#sheet-url-input');
-  sheetUrlInput.value = getSheetUrl();
-  sheetUrlInput.addEventListener('input', () => sheetUrlInput.setCustomValidity(''));
-  const openModal = () => {
-    modal.showModal();
-    form.querySelector('[name="name"]').focus();
-  };
-  document.querySelector('#admin-access').addEventListener('click', () => {
-    const password = window.prompt('أدخل الرقم السري');
-    if (password === null) return;
-    if (password === '2008') {
-      openModal();
-      return;
-    }
-    window.alert('الرقم السري خطأ');
-  });
-  modal.querySelector('.add-modal__close').addEventListener('click', () => modal.close());
-  modal.querySelector('.add-form__cancel').addEventListener('click', () => modal.close());
-  modal.addEventListener('click', (event) => {
-    if (event.target === modal) modal.close();
-  });
-  modal.addEventListener('close', () => form.reset());
-  modal.querySelector('#save-sheet-url').addEventListener('click', async () => {
-    const sheetUrl = sheetUrlInput.value.trim();
-    if (sheetUrl && !/^https:\/\//i.test(sheetUrl)) {
-      sheetUrlInput.setCustomValidity('استخدم رابط HTTPS المنشور من Google Apps Script.');
-      sheetUrlInput.reportValidity();
-      return;
-    }
-    sheetUrlInput.setCustomValidity('');
-    try {
-      localStorage.setItem(sheetUrlStorageKey, sheetUrl);
-      showToast('تم حفظ رابط الشيت');
-    } catch {
-      showToast('تعذر حفظ الرابط في هذا المتصفح');
-      return;
-    }
-
-    numbersLoadPromise = loadNumbers();
-    const loadedNumbers = await numbersLoadPromise;
-    listings = getMergedListings(loadedNumbers);
-    listingsReady = true;
-    pendingListings = [];
-    saveLocalNumbers(listings);
-    updateDirectory();
-  });
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const formData = new FormData(form);
-    const listing = {
-      name: String(formData.get('name')).trim(),
-      phone: String(formData.get('phone')).trim(),
-      category: String(formData.get('category')),
-      description: String(formData.get('description')).trim(),
-    };
-    await saveNumber(listing);
-    modal.close();
-    showToast('تمت الاضافة ✅ سيظهر للجميع');
-  });
 }
 
 function setTheme(theme) {
@@ -496,7 +319,13 @@ document.querySelector('#copy-button').addEventListener('click', async () => {
 
 buildCategories();
 updateDirectory();
-createAddModal();
+try {
+  localStorage.removeItem('tanbish_numbers');
+  localStorage.removeItem('tanbish-guide-listings');
+  localStorage.removeItem('tanbish_sheet_url');
+} catch {
+  showToast('تعذر مسح بيانات الدليل القديمة من هذا المتصفح');
+}
 try {
   const savedTheme = localStorage.getItem('tanbish-theme');
   if (savedTheme === 'light' || savedTheme === 'dark') document.body.dataset.theme = savedTheme;
@@ -505,12 +334,8 @@ try {
 }
 setTheme(document.body.dataset.theme || 'dark');
 
-numbersLoadPromise = loadNumbers();
-numbersLoadPromise.then((loadedNumbers) => {
-  listings = getMergedListings(loadedNumbers);
-  listingsReady = true;
-  pendingListings = [];
-  saveLocalNumbers(listings);
+loadNumbers().then((loadedNumbers) => {
+  listings = loadedNumbers;
   updateDirectory();
 });
 

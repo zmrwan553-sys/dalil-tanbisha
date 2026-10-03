@@ -1,1 +1,1 @@
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbx-jNzj8bIm3dn0-WoZ0fL7_hkoaRpucUfvaT4NEfIPqWpLyJamiBnZbA4pARJsqc0_aw/exec";
+const DIRECTORY_API_URL = "https://script.google.com/macros/s/AKfycbyJXqcwTRitRLmbinLdNjbtopyi32gUyGfGcL7zVS5cVJsR_2R_24Sk0aLpDHYZAO-wGw/exec";

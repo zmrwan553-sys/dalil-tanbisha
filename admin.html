@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b27">
+  <title>إدارة دليل طنبشا</title>
+  <style>
+    :root { color-scheme: light; font-family: Tahoma, Arial, sans-serif; color: #18252d; background: #eef2ed; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; background: linear-gradient(145deg, #eef2ed 0 48%, #e2ece8 48% 100%); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .page { width: min(980px, calc(100% - 32px)); margin: 0 auto; padding: 34px 0 54px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 25px; }
+    .eyebrow { color: #247c69; font-size: 12px; font-weight: 700; }
+    h1 { margin: 4px 0 0; font-size: 25px; }
+    h2 { margin: 0 0 18px; font-size: 18px; }
+    .panel { padding: 22px; border: 1px solid #d7e1dc; border-radius: 8px; background: #fff; box-shadow: 0 12px 35px #1a39200b; }
+    .login-panel { max-width: 430px; margin: 70px auto; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    label { display: grid; gap: 7px; color: #43534f; font-size: 12px; font-weight: 700; }
+    label.full { grid-column: 1 / -1; }
+    input, select, textarea { width: 100%; min-width: 0; min-height: 43px; padding: 10px 11px; border: 1px solid #cfdad4; border-radius: 5px; color: #18252d; background: #fcfdfc; }
+    textarea { min-height: 75px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid #31947d; outline-offset: 1px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 17px; }
+    .button { min-height: 40px; padding: 0 15px; border: 1px solid #247c69; border-radius: 5px; color: #fff; background: #247c69; font-size: 12px; font-weight: 700; }
+    .button:hover { background: #1b6557; }
+    .button.secondary { border-color: #d0dad5; color: #42524c; background: #f3f6f4; }
+    .button.danger { border-color: #b34c43; color: #a63e36; background: #fff; }
+    .button:disabled { cursor: wait; opacity: .6; }
+    .message { min-height: 20px; margin: 12px 0 0; color: #a43c34; font-size: 12px; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 25px 0 12px; }
+    .toolbar h2 { margin: 0; }
+    .count { color: #63716b; font-size: 12px; }
+    .records { display: grid; gap: 9px; }
+    .record { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px; border: 1px solid #d7e1dc; border-radius: 6px; background: #fff; }
+    .record-copy { min-width: 0; }
+    .record-copy strong { display: block; overflow-wrap: anywhere; font-size: 14px; }
+    .record-copy small { display: block; margin-top: 4px; color: #65736d; font-size: 11px; }
+    .record-actions { display: flex; flex: 0 0 auto; gap: 7px; }
+    .record-actions .button { min-height: 34px; padding: 0 11px; }
+    [hidden] { display: none !important; }
+    @media (max-width: 600px) {
+      .page { width: calc(100% - 22px); padding-top: 20px; }
+      .panel { padding: 17px; }
+      .fields { grid-template-columns: 1fr; }
+      label.full { grid-column: auto; }
+      .record { align-items: flex-start; flex-direction: column; }
+      .record-actions { width: 100%; }
+      .record-actions .button { flex: 1; }
+      h1 { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div><span class="eyebrow">دليل طنبشا</span><h1>إدارة بيانات الدليل</h1></div>
+      <button class="button secondary" id="logout-button" type="button" hidden>تسجيل الخروج</button>
+    </header>
+
+    <section class="panel login-panel" id="login-panel">
+      <h2>تسجيل دخول الإدارة</h2>
+      <form id="login-form">
+        <label>كلمة المرور
+          <input name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <div class="actions"><button class="button" type="submit">دخول</button></div>
+        <p class="message" id="login-message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="admin-panel" hidden>
+      <form class="panel" id="listing-form">
+        <h2 id="form-title">إضافة سجل</h2>
+        <div class="fields">
+          <label>اسم الشخص / المحل
+            <input name="name" maxlength="70" required>
+          </label>
+          <label>رقم الهاتف المصري
+            <input name="phone" type="tel" inputmode="numeric" dir="ltr" maxlength="11" pattern="^01[0125][0-9]{8}$" title="اكتب رقمًا مصريًا يبدأ بـ 010 أو 011 أو 012 أو 015" placeholder="01xxxxxxxxx" required>
+          </label>
+          <label class="full">التصنيف
+            <select name="category" required>
+              <option value="" disabled selected>اختار التصنيف</option>
+              <option value="shops">محلات</option><option value="restaurants">مطاعم</option>
+              <option value="tricycles">تروسيكلات</option><option value="pickup">ربع نقل</option>
+              <option value="electrician">كهربائي</option><option value="carpenters">نجارين</option>
+              <option value="doors-windows">ابواب وشبابيك والوميتال</option><option value="painters">نقاشين</option>
+              <option value="appliances">تصليح تلاجات وغسالات وتكيفات</option><option value="tuktuk">تكاتك</option>
+              <option value="pharmacies">صيدليات</option><option value="doctors">اطباء</option>
+              <option value="plumbing">سباكة</option><option value="private-cars">عربيات ملاكي</option>
+              <option value="suzuki-cars">عربيات سوزوكي</option><option value="plaster">بياض محارة</option>
+              <option value="furniture">تجار موبيليا</option><option value="laboratories">معامل</option>
+              <option value="doctors-clinics">دكاترة</option><option value="gypsum-decor">جبس بورد وديكورات</option>
+              <option value="sewage-trucks">عربيات صرف وكسح</option>
+            </select>
+          </label>
+          <label class="full">وصف مختصر
+            <textarea name="description" maxlength="140" rows="3"></textarea>
+          </label>
+        </div>
+        <div class="actions">
+          <button class="button" id="submit-button" type="submit">حفظ السجل</button>
+          <button class="button secondary" id="cancel-edit" type="button" hidden>إلغاء التعديل</button>
+        </div>
+        <p class="message" id="admin-message" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="toolbar"><h2>السجلات الحالية</h2><span class="count" id="record-count"></span></div>
+      <div class="records" id="records" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script>
+    let sessionToken = '';
+    let editingId = '';
+    const loginPanel = document.querySelector('#login-panel');
+    const adminPanel = document.querySelector('#admin-panel');
+    const loginForm = document.querySelector('#login-form');
+    const listingForm = document.querySelector('#listing-form');
+    const records = document.querySelector('#records');
+    const adminMessage = document.querySelector('#admin-message');
+
+    function callServer(method, ...args) {
+      return new Promise((resolve, reject) => {
+        if (!window.google || !google.script || !google.script.run) {
+          reject(new Error('افتح صفحة الإدارة من رابط Google Apps Script المنشور.'));
+          return;
+        }
+        google.script.run.withSuccessHandler(resolve).withFailureHandler((error) => reject(new Error(error.message)))[method](...args);
+      });
+    }
+
+    function setBusy(form, busy) {
+      form.querySelectorAll('button').forEach((button) => { button.disabled = busy; });
+    }
+
+    function renderRecords(listings) {
+      document.querySelector('#record-count').textContent = `${listings.length} سجل`;
+      records.replaceChildren();
+      listings.forEach((listing) => {
+        const item = document.createElement('article');
+        item.className = 'record';
+        const copy = document.createElement('div');
+        copy.className = 'record-copy';
+        const name = document.createElement('strong');
+        name.textContent = listing.name;
+        const info = document.createElement('small');
+        info.textContent = `${listing.phone} · ${listing.category}${listing.description ? ` · ${listing.description}` : ''}`;
+        copy.append(name, info);
+        const actions = document.createElement('div');
+        actions.className = 'record-actions';
+        const edit = document.createElement('button');
+        edit.className = 'button secondary';
+        edit.type = 'button';
+        edit.textContent = 'تعديل';
+        edit.addEventListener('click', () => beginEdit(listing));
+        const remove = document.createElement('button');
+        remove.className = 'button danger';
+        remove.type = 'button';
+        remove.textContent = 'حذف';
+        remove.addEventListener('click', () => removeListing(listing));
+        actions.append(edit, remove);
+        item.append(copy, actions);
+        records.append(item);
+      });
+    }
+
+    function beginEdit(listing) {
+      editingId = listing.id;
+      listingForm.elements.name.value = listing.name;
+      listingForm.elements.phone.value = listing.phone;
+      listingForm.elements.category.value = listing.category;
+      listingForm.elements.description.value = listing.description || '';
+      document.querySelector('#form-title').textContent = 'تعديل سجل';
+      document.querySelector('#submit-button').textContent = 'حفظ التعديلات';
+      document.querySelector('#cancel-edit').hidden = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetEditor() {
+      editingId = '';
+      listingForm.reset();
+      document.querySelector('#form-title').textContent = 'إضافة سجل';
+      document.querySelector('#submit-button').textContent = 'حفظ السجل';
+      document.querySelector('#cancel-edit').hidden = true;
+      adminMessage.textContent = '';
+    }
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = loginForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      document.querySelector('#login-message').textContent = '';
+      try {
+        sessionToken = await callServer('loginAdmin', loginForm.elements.password.value);
+        const listings = await callServer('getAdminListings', sessionToken);
+        loginPanel.hidden = true;
+        adminPanel.hidden = false;
+        document.querySelector('#logout-button').hidden = false;
+        loginForm.reset();
+        renderRecords(listings);
+      } catch (error) {
+        document.querySelector('#login-message').textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    listingForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!listingForm.reportValidity()) return;
+      setBusy(listingForm, true);
+      adminMessage.textContent = '';
+      const listing = {
+        name: listingForm.elements.name.value.trim(),
+        phone: listingForm.elements.phone.value.trim(),
+        category: listingForm.elements.category.value,
+        description: listingForm.elements.description.value.trim(),
+      };
+      try {
+        const method = editingId ? 'updateListing' : 'createListing';
+        const result = editingId
+          ? await callServer(method, sessionToken, editingId, listing)
+          : await callServer(method, sessionToken, listing);
+        renderRecords(result);
+        resetEditor();
+        adminMessage.textContent = 'تم حفظ البيانات.';
+      } catch (error) {
+        adminMessage.textContent = error.message;
+      } finally {
+        setBusy(listingForm, false);
+      }
+    });
+
+    async function removeListing(listing) {
+      if (!window.confirm(`تأكيد حذف سجل ${listing.name}؟`)) return;
+      adminMessage.textContent = '';
+      try {
+        const result = await callServer('deleteListing', sessionToken, listing.id);
+        renderRecords(result);
+        if (editingId === listing.id) resetEditor();
+        adminMessage.textContent = 'تم حذف السجل.';
+      } catch (error) {
+        adminMessage.textContent = error.message;
+      }
+    }
+
+    document.querySelector('#cancel-edit').addEventListener('click', resetEditor);
+    document.querySelector('#logout-button').addEventListener('click', async () => {
+      try {
+        await callServer('logoutAdmin', sessionToken);
+      } catch {}
+      sessionToken = '';
+      adminPanel.hidden = true;
+      loginPanel.hidden = false;
+      document.querySelector('#logout-button').hidden = true;
+      resetEditor();
+    });
+  </script>
+</body>
+</html>
